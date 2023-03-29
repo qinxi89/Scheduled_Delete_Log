@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# time: 2023/3/29 10:15
+# file: Scheduled_Delete_Log.py
+# author: qinxi
+# email: 1023495336@qq.com
+
+'''
+保存3天内的日志，删除时打印日志文件路径，删除结束后输出删除的日志个数，日志文件大小
+'''
+
+import os
+import datetime
+
+days_to_keep = 3  # 保留天数
+deleted_files = []  # 存放已删除的文件
+log_dirs = ['/data/logs2', '/data']  # 日志文件夹路径列表
+
+# 计算保留时间的时间戳
+now = datetime.datetime.now()
+keep_delta = datetime.timedelta(days=days_to_keep)
+keep_time = now - keep_delta
+keep_timestamp = keep_time.timestamp()
+
+# 遍历日志目录
+for log_dir in log_dirs:
+    if os.path.exists(log_dir):
+        # 遍历日志文件夹中的所有文件
+        total_deleted_size = 0
+        for root, dirs, files in os.walk(log_dir):
+            for filename in files:
+                if filename.endswith('.log') or filename.endswith('.gz'):
+                    filepath = os.path.join(root, filename)
+                    print(filepath)
+                    # 获取文件修改时间
+                    file_mtime = os.path.getmtime(filepath)
+
+                    # 如果文件修改时间早于保留时间，删除该文件
+                    if file_mtime < keep_timestamp:
+                        # 将删除的文件添加到列表中
+                        deleted_files.append(filepath)
+                        size = os.path.getsize(filepath)
+                        total_deleted_size += size
+                        #os.remove(filepath)
+                        print(f"删除文件 {filename}, 文件大小 {size} 字节")
+
+        # 输出已删除的文件数量
+        print(f"\n ------目录 {log_dir} 总共删除了{len(deleted_files)}个文件------")
+        # 计算释放的磁盘空间
+        print(f"------目录 {log_dir} 总共释放了 {total_deleted_size / (1024*1024):.2f} MB 磁盘空间------")
+    else:
+        print(log_dir + '目录不存在')
+        continue
